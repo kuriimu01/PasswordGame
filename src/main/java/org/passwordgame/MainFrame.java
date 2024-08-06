@@ -1,77 +1,94 @@
 package org.passwordgame;
 
-import java.awt.Frame;
-import java.awt.Label;
-import java.awt.TextField;
-import java.awt.Button;
-import java.awt.Checkbox;
+
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPasswordField;
+import javax.swing.SwingConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.SwingUtilities;
+import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.TextEvent;
-import java.awt.event.TextListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+public class MainFrame extends JFrame {
 
+    JLabel l1;
+    JPasswordField pf;
+    JButton b1;
+    JCheckBox cb;
 
-public class MainFrame extends Frame {
-
-    Label l1;
-    TextField tf;
-    Button b1;
-    Checkbox cb;
     public MainFrame() {
-        super("Password checker");
+        super("The Password Game");
+        setSize(600, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        ImageIcon icon = new ImageIcon("./icon/icon.png");
+        setIconImage(icon.getImage());
 
-        this.addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {
-                System.exit(0);
-            }
-        });
-
-        l1 = new Label("Enter your password!", 1);
-
-        tf = new TextField(20);
-        b1 = new Button("Show Me");
-        cb = new Checkbox("Hide your password");
+        l1 = new JLabel("Enter your password!", SwingConstants.CENTER);
+        pf = new JPasswordField();
+        b1 = new JButton("Show Me");
+        cb = new JCheckBox("Hide");
 
         Handler h = new Handler();
-        tf.addTextListener(h);
-        tf.addActionListener(h);
+        pf.setPreferredSize(new Dimension(600, 45));
+        pf.setEchoChar((char) 0);
+
+        pf.getDocument().addDocumentListener(h);
+        pf.addActionListener(h);
         b1.addActionListener(h);
         cb.addItemListener(h);
 
         setLayout(new GridLayout(3, 1));
         add(l1);
-        add(tf);
+        add(pf);
         add(cb);
 
     }
-    class Handler implements ActionListener, TextListener, ItemListener {
+    class Handler implements ActionListener, DocumentListener, ItemListener {
+
         @Override
         public void actionPerformed(ActionEvent e) {
-            CatFrame cf = new CatFrame();
-            cf.setSize(CatFrame.catImage.getWidth(cf), CatFrame.catImage.getHeight(cf));
-            cf.setVisible(true);
-            cf.setLocationRelativeTo(null);
-            dispose();
+            if (e.getSource()==b1) {
+                SwingUtilities.invokeLater(CatFrame::new);
+                dispose();
+            }
+        }
+
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            checkPassword();
+        }
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            checkPassword();
+        }
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+            checkPassword();
         }
         @Override
         public void itemStateChanged(ItemEvent e) {
-            if (!tf.echoCharIsSet()) {
-                tf.setEchoChar('*');
-            } else {
-                tf.setEchoChar((char) 0);
+            if (e.getSource() == cb) {
+                if (cb.isSelected()) {
+                    pf.setEchoChar('*');
+                } else {
+                    pf.setEchoChar((char) 0);
+                }
             }
         }
-        @Override
-        public void textValueChanged(TextEvent e) {
-            String str = tf.getText();
+        private void checkPassword() {
+            String str = new String(pf.getPassword());
+
             if (str.length() < 5) {
                 l1.setText("Rule 1: Your password must be at least 5 characters");
             } else if (!hasNumber(str)) {
@@ -83,11 +100,11 @@ public class MainFrame extends Frame {
             } else {
                 l1.setText("You win! Enjoy your cat picture!");
                 add(b1);
+                pf.setEditable(false);
                 setLayout(new GridLayout(4, 1));
                 setVisible(true);
             }
         }
-
         public boolean hasUpperCase(String str) {
             Pattern pattern = Pattern.compile("[A-Z]");
             Matcher matcher = pattern.matcher(str);

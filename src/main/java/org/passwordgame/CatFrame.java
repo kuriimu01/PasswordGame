@@ -1,21 +1,20 @@
 package org.passwordgame;
 
-import java.awt.Frame;
-import java.awt.Label;
-import java.awt.Image;
-import java.awt.Toolkit;
-import java.awt.MediaTracker;
-import java.awt.FlowLayout;
-import java.awt.Graphics;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
+import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-public class CatFrame extends Frame {
-    Label l1;
-    static Image catImage;
+public class CatFrame extends JFrame {
+    JLabel l1;
+    JLabel imageLabel;
+    static ImageIcon catImageIcon;
 
     CatFrame() {
-
         super("meow 🐈 ");
 
         this.addWindowListener(new WindowAdapter() {
@@ -24,26 +23,42 @@ public class CatFrame extends Frame {
             }
         });
 
-        CatApi ca = new CatApi();
-        ca.loadImage();
+        l1 = new JLabel("Enjoy your cat <3", SwingConstants.CENTER);
+        imageLabel = new JLabel();
 
-        l1 = new Label("Enjoy your cat <3");
-        catImage = Toolkit.getDefaultToolkit().getImage("cat_image.jpg");
-        MediaTracker track = new MediaTracker(this);
+        setLayout(new BorderLayout());
+        add(l1, BorderLayout.NORTH);
+        add(imageLabel, BorderLayout.CENTER);
 
-        setLayout(new FlowLayout()) ;
+        loadImage();
 
-        track.addImage(catImage,0);
-        try {
-            track.waitForID(0);
-        }
-        catch(InterruptedException ignored){
-        }
-        add(l1);
+        pack();
         setVisible(true);
     }
-    public void paint(Graphics g){
-        g.drawImage(catImage,0,0,catImage.getWidth(this),catImage.getHeight(this),null);
-    }
-}
+
+    private void loadImage() {
+        SwingWorker<Void, Void> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                CatApi ca = new CatApi();
+                ca.loadImage();
+
+                catImageIcon = new ImageIcon("cat_image.jpg");
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                if (catImageIcon != null) {
+                    imageLabel.setIcon(catImageIcon);
+                    pack();
+                    setLocationRelativeTo(null);
+                } else {
+                    l1.setText("Failed to load cat image.");
+                }
+            }
+        };
+
+        worker.execute();
+    }}
 
