@@ -1,31 +1,29 @@
 package org.passwordgame;
 
 
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPasswordField;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.SwingUtilities;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 
 public class MainFrame extends JFrame {
 
+    Validator v = new Validator();
+
     JLabel l1;
+    JLabel l2;
+    JTextField tf;
     JPasswordField pf;
     JButton b1;
     JCheckBox cb;
+    boolean correctUsername = false;
+    boolean correctPassword = false;
 
     public MainFrame() {
         super("The Password Game");
@@ -34,31 +32,38 @@ public class MainFrame extends JFrame {
         ImageIcon icon = new ImageIcon("./icon/icon.png");
         setIconImage(icon.getImage());
 
-        l1 = new JLabel("Enter your password!", SwingConstants.CENTER);
+        l1 = new JLabel("Пароль", SwingConstants.CENTER);
+        l2 = new JLabel("Ім'я користувача", SwingConstants.CENTER);
+        tf = new JTextField();
         pf = new JPasswordField();
-        b1 = new JButton("Show Me");
-        cb = new JCheckBox("Hide");
+        b1 = new JButton("Далі💫");
+        cb = new JCheckBox("Приховати");
 
         Handler h = new Handler();
         pf.setPreferredSize(new Dimension(600, 45));
         pf.setEchoChar((char) 0);
 
+        tf.getDocument().addDocumentListener(h);
+        tf.addActionListener(h);
         pf.getDocument().addDocumentListener(h);
         pf.addActionListener(h);
         b1.addActionListener(h);
         cb.addItemListener(h);
 
-        setLayout(new GridLayout(3, 1));
+        setLayout(new GridLayout(6, 1));
+        add(l2);
+        add(tf);
         add(l1);
         add(pf);
         add(cb);
 
     }
+
     class Handler implements ActionListener, DocumentListener, ItemListener {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (e.getSource()==b1) {
+            if (e.getSource() == b1) {
                 SwingUtilities.invokeLater(CatFrame::new);
                 dispose();
             }
@@ -66,16 +71,22 @@ public class MainFrame extends JFrame {
 
         @Override
         public void insertUpdate(DocumentEvent e) {
-            checkPassword();
+            checkFields(e);
+            winCheck();
         }
+
         @Override
         public void removeUpdate(DocumentEvent e) {
-            checkPassword();
+            checkFields(e);
+            winCheck();
         }
+
         @Override
         public void changedUpdate(DocumentEvent e) {
-            checkPassword();
+            checkFields(e);
+            winCheck();
         }
+
         @Override
         public void itemStateChanged(ItemEvent e) {
             if (e.getSource() == cb) {
@@ -86,42 +97,70 @@ public class MainFrame extends JFrame {
                 }
             }
         }
-        private void checkPassword() {
-            String str = new String(pf.getPassword());
 
-            if (str.length() < 5) {
-                l1.setText("Rule 1: Your password must be at least 5 characters");
-            } else if (!hasNumber(str)) {
-                l1.setText("Rule 2: Your password must include a number.");
-            } else if (!hasUpperCase(str)) {
-                l1.setText("Rule 3: Your password must include an uppercase letter.");
-            } else if (!hasSpecialCharacter(str)) {
-                l1.setText("Rule 4: Your password must include a special character.");
+        private void checkFields(DocumentEvent e) {
+            if (e.getDocument() == tf.getDocument()) {
+                checkUsername();
+            } else if (e.getDocument() == pf.getDocument()) {
+                checkPassword();
+            }
+        }
+
+        private void checkUsername() {
+            String username = tf.getText();
+
+            if (username.length() < 3) {
+                l2.setText("Ім'я користувача має містити щонайменше 3 символи.");
+                correctUsername = false;
+            } else if (username.length() > 20) {
+                l2.setText("Ім'я користувача не може перевищувати 20 символів.");
+                correctUsername = false;
+            } else if (v.hasSpaces(username)) {
+                l2.setText("Ім'я користувача не може містити пробіли.");
+                correctUsername = false;
+            } else if (!v.isValidUsername(username)) {
+                l2.setText("Ім'я користувача може містити лише літери, цифри, '_', '-'.");
+                correctUsername = false;
             } else {
-                l1.setText("You win! Enjoy your cat picture!");
+                l2.setText("Ім'я користувача правильне!");
+                correctUsername = true;
+            }
+        }
+
+
+        private void checkPassword() {
+            String password = new String(pf.getPassword());
+
+            if (!v.hasLowerCase(password)) {
+                l1.setText("Пароль повинен містити хоча б одну малу літеру.");
+                correctPassword = false;
+            } else if (password.length() < 8) {
+                l1.setText("Пароль повинен містити щонайменше 8 символів.");
+                correctPassword = false;
+            } else if (!v.hasNumber(password)) {
+                l1.setText("Пароль повинен містити хоча б одну цифру.");
+                correctPassword = false;
+            } else if (!v.hasUpperCase(password)) {
+                l1.setText("Пароль повинен містити хоча б одну велику літеру.");
+                correctPassword = false;
+            } else if (!v.hasSpecialCharacter(password)) {
+                l1.setText("Пароль повинен містити хоча б один спеціальний символ.");
+                correctPassword = false;
+            } else {
+                correctPassword = true;
+            }
+        }
+
+        private void winCheck() {
+            if (correctUsername && correctPassword) {
+                l2.setText("Ім'я користувача та пароль правильні! Насолоджуйтесь картинкою кота!");
+                l1.setText("");
                 add(b1);
-                pf.setEditable(false);
-                setLayout(new GridLayout(4, 1));
+                setLayout(new GridLayout(7, 1));
                 setVisible(true);
             }
         }
-        public boolean hasUpperCase(String str) {
-            Pattern pattern = Pattern.compile("[A-Z]");
-            Matcher matcher = pattern.matcher(str);
-            return matcher.find();
-        }
-
-        public boolean hasNumber(String str) {
-            Pattern pattern = Pattern.compile("\\d");
-            Matcher matcher = pattern.matcher(str);
-            return matcher.find();
-        }
-
-        public boolean hasSpecialCharacter(String str) {
-            Pattern pattern = Pattern.compile("[^a-zA-Z0-9]");
-            Matcher matcher = pattern.matcher(str);
-            return matcher.find();
-        }
     }
 }
+
 

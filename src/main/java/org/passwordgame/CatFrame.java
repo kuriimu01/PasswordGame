@@ -23,7 +23,7 @@ public class CatFrame extends JFrame {
             }
         });
 
-        l1 = new JLabel("Enjoy your cat <3", SwingConstants.CENTER);
+        l1 = new JLabel("мяв", SwingConstants.CENTER);
         imageLabel = new JLabel();
 
         setLayout(new BorderLayout());
